@@ -1,0 +1,170 @@
+# coding: utf-8
+
+import math as m
+import numpy as np
+from mpi4py import MPI
+import time
+import glob, os
+
+from dedalus import public as de
+from dedalus.extras import flow_tools
+from dedalus.extras import plot_tools
+from dedalus.tools import post
+
+import logging
+root = logging.root
+for h in root.handlers:
+    h.setLevel("INFO") 
+logger = logging.getLogger(__name__)
+
+from numpy.polynomial import chebyshev as cb
+
+# The mode functions for each basis type
+
+def rescale(x,a,b,c,d):
+    return c + (d - c)*(x - a)/(b - a)
+
+def cheb_mode(x, m, a, b):
+    x_scaled = rescale(x,a,b,-1,1)
+    return cb.chebval(x_scaled, np.append(np.zeros(m),1))
+
+def cheb_modes(x, M, a, b):
+    return np.array([cheb_mode(x,m,a,b) for m in M])
+
+def fourier_mode(x, kx,a,b):
+    return np.exp(1j*kx*(x-a))
+
+def fourier_modes(x, kx,a,b):
+    temp = np.exp(1j*np.outer(kx,x-a))
+    temp[kx==0] = temp[kx==0]/2
+    return temp
+
+def sin_modes(x, kx, a, b):
+    return np.sin(np.outer(kx,x-a))
+
+def cos_modes(x, kx, a, b):
+    return np.cos(np.outer(kx,x-a))
+
+# Getting and sorting bases and modes
+
+basis_names = {de.Fourier:'Fourier',de.SinCos:'SinCos',de.Chebyshev:'Chebyshev'}
+
+def modes(basis,parity=0):
+    """Return appropriate mode functions of basis."""
+    if basis == 'Fourier': return fourier_modes
+    elif basis == 'SinCos':
+        if parity == 1: return cos_modes
+        elif parity==-1:return sin_modes
+        else: raise ValueError('Parity not specified')
+    elif basis == 'Chebyshev': return cheb_modes
+    else: raise NameError('Incorrect basis type')
+
+def get_basis_type(basis):
+    """Get type of basis."""
+    return basis_names[type(basis)]
+        
+def get_modes(basis,x,parity=0):
+    """Get the grid values of the basis mode functions."""
+    func = modes(basis_names[type(basis)],parity=parity)
+    return func(x,basis.elements,*basis.interval)
+
+def get_parities(u):
+    """Get parities of each dimension of field. Return 0 if not SinCos basis."""
+    bases = u.domain.bases
+    parities = np.zeros(len(bases))
+    for i, basis in enumerate(bases):
+        if get_basis_type(basis)=='SinCos': parities[i] = u.meta[basis.name]['parity']
+    return parities
+
+def transpose_type(arr):
+    """Build tuple to cycle backward through axes."""
+    indices = list(range(arr.ndim))
+    return [indices[-1]]+indices[:-1]
+
+def combine(A, B, basis_type):
+    """Correct combination of mode grid values and coefficients."""
+    if basis_type == 'Fourier': return 2*np.dot(A,B).real
+    else: return np.dot(A,B)
+
+# The interpolating function
+
+def interp(u,*grids):
+    """Interpolate field u on the axes given."""
+    bases = u.domain.bases
+    basis_types = [get_basis_type(basis) for basis in bases]
+    parities = get_parities(u)
+    basis_modes = [get_modes(basis,grid,parity=parity) for basis,grid,parity in zip(bases,grids,parities)]
+    u0 = u['c'].copy()
+    for modes, basis_type in zip(basis_modes[::-1],basis_types[::-1]):
+        u0 = combine(u0,modes,basis_type)
+        u0 = u0.transpose(transpose_type(u0))
+    return u0
+
+# The interpolation function
+
+def interpolate_2D(u, x, z, comm=None, basis_types=('Fourier','Chebyshev')):
+    """
+    Interpolation for a dedalus field at grid given by the points np.meshgrid(x,z).
+
+    
+    """
+    # Get mpi communications 
+    domain = u.domain
+    comm = domain.dist.comm
+    rank, size = comm.rank, comm.size
+    
+    # Get bases and shapes
+    xbasis,zbasis = domain.bases
+    lcshape = domain.dist.coeff_layout.local_shape(1)
+    gcshape = domain.dist.coeff_layout.global_shape(1)
+    
+    # Build global coefficients in local processor with MPI
+    if size > 1:
+        # prepare to send local coefficients to rank 0
+        sendbuf = u['c'].copy()
+        recvbuf = None
+        if rank == 0: recvbuf = np.empty([size, *lcshape], dtype=np.complex128)
+        comm.Gather(sendbuf, recvbuf, root=0)
+        
+        # send global coefficients to every processor from rank 0
+        if rank == 0: gcoeffs = np.reshape(recvbuf,gcshape)
+        else: gcoeffs = np.empty(gcshape, dtype=np.complex128)
+        comm.Bcast(gcoeffs, root=0)    
+    else: gcoeffs = u['c']    
+    
+    # Build correct z basis interpolation functions
+    if basis_types[1] == 'SinCos':
+        u_parity = u.meta['z']['parity']
+        if u_parity == 1:   zfunc = lambda z : trig_cos_vals(z, gcshape[1], interval=zbasis.interval)
+        elif u_parity ==-1: zfunc = lambda z : trig_sin_vals(z, gcshape[1], interval=zbasis.interval)
+    elif basis_types[1] == 'Chebyshev':
+        zfunc = lambda z : cheb_vals(z, gcshape[1], interval=zbasis.interval)
+    
+    # Get the grid values of all the modes (split for Fourier)
+    xsc = fourier_cos_vals(x.flatten(), gcshape[0], interval=xbasis.interval)
+    xss = fourier_sin_vals(x.flatten(), gcshape[0], interval=xbasis.interval)
+    zs = zfunc(z.flatten())
+
+    # Perform the transform
+    B, C = gcoeffs.real, gcoeffs.imag
+    F = np.dot(xsc,B) + np.dot(xss,C)
+    G = np.dot(F,zs)
+    return G
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
