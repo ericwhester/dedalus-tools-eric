@@ -36,7 +36,6 @@ def fourier_mode(x, kx,a,b):
 
 def fourier_modes(x, kx,a,b):
     temp = np.exp(1j*np.outer(kx,x-a))
-    temp[kx==0] = temp[kx==0]/2
     return temp
 
 def sin_modes(x, kx, a, b):
@@ -81,26 +80,38 @@ def transpose_type(arr):
     indices = list(range(arr.ndim))
     return [indices[-1]]+indices[:-1]
 
-def combine(A, B, basis_type):
-    """Correct combination of mode grid values and coefficients."""
-    if basis_type == 'Fourier': return 2*np.dot(A,B).real
-    else: return np.dot(A,B)
+def is_last(bases):
+    """List of booleans for checking if the first Fourier basis.
+    
+    It's the last one to be transformed, from complex to real."""
+    lasts = [False for _ in bases]
+    i,_ = next(((i,name) for i, name in enumerate(bases) if name=='Fourier'), (None,None))
+    if i is not None: lasts[i] = True
+    return lasts
 
+def combine(A, B, last=False):
+    """Correct combination of mode grid values and coefficients."""
+    if last: 
+        B[0,:] = B[0,:]/2
+        return 2*np.dot(A,B).real
+    else: return np.dot(A,B)
 # The interpolating function
 
 def interp(u,*grids):
-    """Interpolate field u on the axes given."""
+    """Interpolate the field at the grid points.
+
+    This isn't parallelised.
+    Give in x, y, z order (last basis is non-separable)."""
     bases = u.domain.bases
     basis_types = [get_basis_type(basis) for basis in bases]
+    lasts = is_last(basis_types)
     parities = get_parities(u)
     basis_modes = [get_modes(basis,grid,parity=parity) for basis,grid,parity in zip(bases,grids,parities)]
     u0 = u['c'].copy()
-    for modes, basis_type in zip(basis_modes[::-1],basis_types[::-1]):
-        u0 = combine(u0,modes,basis_type)
+    for modes, last in zip(basis_modes[::-1],lasts[::-1]):
+        u0 = combine(u0,modes,last=last)
         u0 = u0.transpose(transpose_type(u0))
     return u0
-
-# The interpolation function
 
 def interpolate_2D(u, x, z, comm=None, basis_types=('Fourier','Chebyshev')):
     """
