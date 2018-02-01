@@ -9,6 +9,7 @@ from dedalus import public as de
 from dedalus.tools import field_tools as ft
 from dedalus.tools import file_tools as flt
 from dedalus.tools import interpolation as ip
+from scipy.ndimage.filters import gaussian_filter
 
 def smooth(mask_func,δ,*gs,domain=None,comm=None,res=32):
     """Smooth given mask function, with defined width δ.
