@@ -73,4 +73,4 @@ def higher_res(*fields, scale=8):
     for new_field, field in zip(new_fields, fields):
         new_field['g'] = field['g']
     reset(*fields)
-    return x_new, new_fields
+    return x_new + list(new_fields)
