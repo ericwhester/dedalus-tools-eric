@@ -2,7 +2,7 @@ import numpy as np
 import os
 import h5py
 
-def save_data(dset, dname, savename, group='/',overwrite=False):
+def save_data(filename, dset, dname, group='/',overwrite=False):
     """Save array and name to a group in an hdf5 file.
     
     Parameters
@@ -12,7 +12,7 @@ def save_data(dset, dname, savename, group='/',overwrite=False):
         dataset
     dnames: string
         dataset name
-    savename: string
+    filename: string
         file name
     group: string, optional
         subgroup of hdf5 file to write to
@@ -22,7 +22,7 @@ def save_data(dset, dname, savename, group='/',overwrite=False):
     -------
     None
     """
-    with h5py.File(savename,'a') as f:
+    with h5py.File(filename,'a') as f:
         if group not in f.keys(): f.create_group(group)
         g = f[group]
         if dname in g.keys(): 
@@ -33,23 +33,23 @@ def save_data(dset, dname, savename, group='/',overwrite=False):
         g[dname] = dset
     return
 
-def make_group(name,savename,group='/'):
+def make_group(filename,name,group='/'):
     """Make a group in an hdf5 file."""
-    with h5py.File(savename,'a') as f:
+    with h5py.File(filename,'a') as f:
         g = f[group]
         if name not in g.keys():
             g.create_group(name)
     return
 
 
-def load_data(savename, dnames, group='/',show=False,flatten=True):
+def load_data(filename, *dnames, group='/',show=False,flatten=True):
     """Load list of arrays given names of group in an hdf5 file.
     
     Parameters
     ----------
     dnames: list
         strings of dataset names
-    savename: string
+    filename: string
         file name
     group: string, optional
         subgroup of hdf5 file to write to
@@ -64,7 +64,7 @@ def load_data(savename, dnames, group='/',show=False,flatten=True):
 
     """
 
-    with h5py.File(savename,'r') as f:
+    with h5py.File(filename,'r') as f:
         arrs = []
         g = f[group]
         for dname in dnames:
@@ -113,9 +113,15 @@ def print_keys(filename, group='/', formatted=False):
         print(keys)
     return
 
-def delete(name,savename,group='/'):
+def delete(filename,name,group='/'):
     """Delete file or group in an hdf5 file."""
-    with h5py.File(savename,'a') as f:
+    with h5py.File(filename,'a') as f:
         g = f[group]
         if name in g.keys(): del g[name]
+    return
+
+def move(filename,origin,destination):
+    """Move file or group in an hdf5 file."""
+    with h5py.File(filename,'a') as f:
+        f[destination] = f[origin]
     return
