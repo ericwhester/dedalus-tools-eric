@@ -45,8 +45,8 @@ def compound_coefficients(field):
     first : dedalus field
     """
 
-    domain, basis, x, kx = get_grids(field)
-    kxs = [subbasis.elements for subbasis in basis.subbases]
+    domain, bases, x, kx = get_grids(field)
+    kxs = [subbasis.elements for subbasis in bases[-1].subbases]
     cs = [basis.sub_cdata(field['g'], i, 0) for i in range(len(basis.subbases))]
     return kxs, cs
 
