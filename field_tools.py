@@ -47,7 +47,7 @@ def compound_coefficients(field):
 
     domain, bases, x, kx = get_grids(field)
     kxs = [subbasis.elements for subbasis in bases[-1].subbases]
-    cs = [basis.sub_cdata(field['g'], i, 0) for i in range(len(basis.subbases))]
+    cs = [bases[-1].sub_cdata(field['g'], i, 0) for i in range(len(bases[-1].subbases))]
     return kxs, cs
 
 def higher_res(*fields, scale=8):
