@@ -113,11 +113,12 @@ def print_keys(filename, group='/', formatted=False):
         print(keys)
     return
 
-def delete(filename,name,group='/'):
+def delete(filename,*names,group='/'):
     """Delete file or group in an hdf5 file."""
     with h5py.File(filename,'a') as f:
         g = f[group]
-        if name in g.keys(): del g[name]
+        for name in names:
+            if name in g.keys(): del g[name]
     return
 
 def move(filename,origin,destination):
