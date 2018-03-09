@@ -10,6 +10,7 @@ from dedalus import public as de
 from dedalus.extras import flow_tools
 from dedalus.extras import plot_tools
 from dedalus.tools import post
+from dedalus.tools import compound_interpolation as cip
 
 import logging
 root = logging.root
@@ -46,7 +47,7 @@ def cos_modes(x, kx, a, b):
 
 # Getting and sorting bases and modes
 
-basis_names = {de.Fourier:'Fourier',de.SinCos:'SinCos',de.Chebyshev:'Chebyshev'}
+basis_names = {de.Fourier:'Fourier',de.SinCos:'SinCos',de.Chebyshev:'Chebyshev',de.Compound:'Compound'}
 
 def modes(basis,parity=0):
     """Return appropriate mode functions of basis."""
@@ -88,7 +89,6 @@ def is_last(bases):
     i,_ = next(((i,name) for i, name in enumerate(bases) if name=='Fourier'), (None,None))
     if i is not None: lasts[i] = True
     return lasts
-
 def combine(A, B, last=False):
     """Correct combination of mode grid values and coefficients."""
     if last: 
@@ -104,6 +104,8 @@ def interp(u,*grids):
     Give in x, y, z order (last basis is non-separable)."""
     bases = u.domain.bases
     basis_types = [get_basis_type(basis) for basis in bases]
+    if basis_types[-1]=='Compound': # Do compound interpolation
+        return cip.compound_interpolate(u,*grids)
     lasts = is_last(basis_types)
     parities = get_parities(u)
     basis_modes = [get_modes(basis,grid,parity=parity) for basis,grid,parity in zip(bases,grids,parities)]
