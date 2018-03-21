@@ -32,8 +32,8 @@ logger = logging.getLogger(__name__)
 def sizes_to_slices(dims,arr):
     """Create list of numpy slice objects given size of subdomain slices."""
     sl = [(slice(None),)*(dims-1) + (slice(sum(arr[:index]), sum(arr[:index+1])),) for index in range(len(arr))]
-    print(arr)
-    print(sl)
+#    print(arr)
+#    print(sl)
     return sl
 
 def get_sub_domains(field):
