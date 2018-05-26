@@ -89,6 +89,7 @@ def is_last(bases):
     i,_ = next(((i,name) for i, name in enumerate(bases) if name=='Fourier'), (None,None))
     if i is not None: lasts[i] = True
     return lasts
+
 def combine(A, B, last=False):
     """Correct combination of mode grid values and coefficients."""
     if last: 

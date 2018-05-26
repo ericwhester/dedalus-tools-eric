@@ -42,7 +42,7 @@ def make_group(filename,name,group='/'):
     return
 
 
-def load_data(filename, *dnames, group='/',show=False,flatten=True):
+def load_data(filename, *dnames, group='/',show=False,flatten=True,sel=None):
     """Load list of arrays given names of group in an hdf5 file.
     
     Parameters
@@ -57,7 +57,8 @@ def load_data(filename, *dnames, group='/',show=False,flatten=True):
     show: boolean, optional
     flatten: boolean, optional
         return number if single value
-        
+    sel: slice object, optional
+        return slice of data array
     Returns
     -------
     List of numpy arrays
@@ -69,7 +70,8 @@ def load_data(filename, *dnames, group='/',show=False,flatten=True):
         g = f[group]
         for dname in dnames:
             if show: print(dname)    
-            arr = g[dname][...]
+            if not sel: sel = slice(None)
+            arr = g[dname][sel]
             if flatten and arr.size == 1: arr = arr.item()
             arrs.append(arr)
     return arrs
