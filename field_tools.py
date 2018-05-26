@@ -9,7 +9,7 @@ def reset(*fields, scales=1):
     Parameters
     ---------
     first : dedalus fields
-    scale : int
+    scale : int, float or tuple
 
     Returns
     -------
@@ -31,6 +31,7 @@ def get_grids(field, scales=1):
     if isinstance(scales,int) or isinstance(scales,float): scales = [scales]*len(field['g'].shape)
     domain = field.domain
     bases = domain.bases
+    if isinstance(scales, int) or isinstance(scales,float): scales = (scales,)*len(bases)
     x = [basis.grid(scale) for basis,scale in zip(bases,scales)]
     kx= [basis.elements for basis in bases]
     field.set_scales(scales)
@@ -50,7 +51,7 @@ def compound_coefficients(field):
     cs = [bases[-1].sub_cdata(field['c'], i, 0) for i in range(len(bases[-1].subbases))]
     return kxs, cs
 
-def higher_res(*fields, scales=8):
+def higher_res(*fields, scales=2):
     """
     Short wrapper to get higher resolution grid and fields of dedalus fields.
 
