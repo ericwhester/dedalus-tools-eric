@@ -42,7 +42,7 @@ def make_group(filename,name,group='/'):
     return
 
 
-def load_data(filename, *dnames, group='/',show=False,flatten=True,sel=None):
+def load_data(filename, *dnames, group='/',show=False,flatten=True,sel=None,checkint=True):
     """Load list of arrays given names of group in an hdf5 file.
     
     Parameters
@@ -75,6 +75,7 @@ def load_data(filename, *dnames, group='/',show=False,flatten=True,sel=None):
             if flatten:
                 if arr.size == 1: arr = arr.item()
                 elif arr.shape[0] == 1: arr = arr[0,Ellipsis]
+            if checkint and isinstance(arr,float) and arr.is_integer(): arr = int(arr)
             arrs.append(arr)
     return arrs
 
