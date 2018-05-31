@@ -72,7 +72,9 @@ def load_data(filename, *dnames, group='/',show=False,flatten=True,sel=None):
             if show: print(dname)    
             if not sel: sel = slice(None)
             arr = g[dname][sel]
-            if flatten and arr.size == 1: arr = arr.item()
+            if flatten:
+                if arr.size == 1: arr = arr.item()
+                elif arr.shape[0] == 1: arr = arr[0,Ellipsis]
             arrs.append(arr)
     return arrs
 
