@@ -70,7 +70,7 @@ def load_data(filename, *dnames, group='/',show=False,flatten=True,sel=None,chec
         g = f[group]
         for dname in dnames:
             if show: print(dname)    
-            if not sel: sel = slice(None)
+            if not sel: sel = Ellipsis
             arr = g[dname][sel]
             if flatten:
                 if arr.size == 1: arr = arr.item()
