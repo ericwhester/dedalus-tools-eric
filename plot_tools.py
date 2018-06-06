@@ -19,12 +19,13 @@ def ax_settings(ax,xlim=None, ylim=None, aspect=None, xlabel=None, ylabel=None, 
 
 def plot1D(x,arr,
            fig=None, ax=None, savename=None, figsize=None,
-           xlim=None, ylim=None, aspect=None, xlabel=None, ylabel=None, title=None,
+           xlim=None, ylim=None, aspect=None, xlabel=None, ylabel=None, title=None,grid=True,
            **kwargs):
     """Simple 1D plot."""
     if not ax: fig, ax = plt.subplots(figsize=figsize)
     plot = ax.plot(x, arr, **kwargs)
     ax_settings(ax, xlim=xlim,ylim=ylim,aspect=aspect,xlabel=xlabel,ylabel=ylabel,title=title)
+    if grid: ax.grid()
     if savename: plt.savefig(savename,bbox_inches='tight')
     return fig, ax
 
