@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.colors import Normalize
+import bokeh.plotting as bp
 
 # Convenient functions
 def logmag(arr): return np.log10(np.abs(arr))
@@ -17,7 +18,13 @@ def ax_settings(ax,xlim=None, ylim=None, aspect=None, xlabel=None, ylabel=None, 
     if ylabel: ax.set(ylabel=ylabel)
     if title: ax.set(title=title)
 
-def plot1D(x,arr,
+def bplot(x, y, fig=None, glyph='line',**kwargs):
+    if not fig: fig = bp.figure(height=300)
+    method = getattr(fig,glyph)
+    method(x, y, **kwargs)
+    return fig
+
+def plot(x,arr,
            fig=None, ax=None, savename=None, figsize=None,
            xlim=None, ylim=None, aspect=None, xlabel=None, ylabel=None, title=None,grid=True,
            **kwargs):
