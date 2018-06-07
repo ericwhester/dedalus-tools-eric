@@ -52,6 +52,8 @@ def get_grid_slices(field):
 
 def get_sub_fields(field):
     """Create and initialize list of subfields for a field on a compound domain."""
+    ft.reset(field)
+    print(field['g'].shape)
     sub_domains = get_sub_domains(field)
     sub_grid_slices = get_grid_slices(field)
     sub_fields = []
