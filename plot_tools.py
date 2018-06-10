@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.colors import Normalize
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import numpy as np
 import bokeh.plotting as bp
 
 # Convenient functions
@@ -47,7 +49,10 @@ def cplot(x1,x2,arr,
     if len(x1.shape) == 1: x1, x2 = np.meshgrid(x1,x2,indexing='ij')
     plot = ax.pcolormesh(x1,x2,arr,**kwargs)
     ax_settings(ax, xlim=xlim,ylim=ylim,aspect=aspect,xlabel=xlabel,ylabel=ylabel,title=title)
-    if colorbar: plt.colorbar(plot,fraction=0.046,pad=0.04,shrink=.7)
+    if colorbar:
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size='2.5%', pad=0.05)
+        plt.colorbar(plot,cax=cax)
     if savename: plt.savefig(savename,dpi=dpi,bbox_inches='tight')
     return fig, ax
 
