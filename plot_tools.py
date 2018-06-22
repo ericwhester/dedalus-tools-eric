@@ -21,7 +21,7 @@ def ax_settings(ax,xlim=None, ylim=None, aspect=None, xlabel=None, ylabel=None, 
     if title: ax.set(title=title)
 
 def bplot(x, y, fig=None, glyph='line',**kwargs):
-    if not fig: fig = bp.figure(height=300)
+    if not fig: fig = bp.figure(height=250)
     method = getattr(fig,glyph)
     method(x, y, **kwargs)
     return fig
@@ -41,8 +41,8 @@ def plot(x,arr,
 # Plotting 2D Cartesian data
 def cplot(x1,x2,arr,
           fig=None,ax=None,figsize=None,
-          dpi=200,savename=None,colorbar=None,
-          xlim=None, ylim=None, aspect=None, xlabel=None, ylabel=None, title=None, 
+          dpi=200,savename=None,colorbar=True,
+          xlim=None, ylim=None, aspect=1, xlabel=None, ylabel=None, title=None, 
           **kwargs):
     """2D pcolormesh."""
     if not ax: fig, ax = plt.subplots(figsize=figsize)
