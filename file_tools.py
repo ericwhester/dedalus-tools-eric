@@ -131,3 +131,25 @@ def move(filename,origin,destination):
     with h5py.File(filename,'a') as f:
         f[destination] = f[origin]
     return
+
+def save_domain(path,domain):
+    """Save domain object information."""
+    orders = [str(i) for i in range(len(domain.bases))]
+    types = [type(basis).__name__ for basis in domain.bases]
+    names = [basis.name for basis in domain.bases]
+    sizes = [basis.base_grid_size for basis in domain.bases]
+    intervals = [basis.interval for basis in domain.bases]
+    for typ,name,order,size,interval in zip(types,names,orders,sizes,intervals):
+        order = str(order)
+        for arr, name in zip([typ,name,size,interval],['type','name','size','interval']): save_data(path,arr,name,group=order)
+
+def load_domain(path,):
+    """Load domain object."""
+    from dedalus import public as de
+    classes = {'Fourier':de.Fourier,'Chebyshev':de.Chebyshev,'SinCos':de.SinCos}
+    orders, bases = sorted(get_keys(path)), {}
+    for order in orders:
+        name,typ,size,interval = load_data(path,'name','type','size','interval',group=order)
+        bases[order] = classes[typ](name,size,interval=interval)
+    domain = de.Domain([bases[order] for order in orders], grid_dtype=np.float64)
+    return domain
