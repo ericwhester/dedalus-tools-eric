@@ -74,6 +74,7 @@ def load_data(filename, *dnames, group='/',show=False,flatten=True,sel=None,chec
             arr = g[dname][sel]
             if flatten:
                 if arr.size == 1: arr = arr.item()
+                elif np.prod(arr.shape) == max(arr.shape): arr = arr.flatten()                
                 elif arr.shape[0] == 1: arr = arr[0,Ellipsis]
             if checkint and isinstance(arr,float) and arr.is_integer(): arr = int(arr)
             arrs.append(arr)
