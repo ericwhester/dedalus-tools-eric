@@ -157,3 +157,14 @@ def load_domain(path,comm=None):
         bases[order] = classes[typ](name,size,interval=interval)
     domain = de.Domain([bases[order] for order in orders], grid_dtype=np.float64, comm=comm)
     return domain
+
+def pickle_save(obj,name,dr=''):
+    """Save python object with pickle."""
+    if dr: flt.makedir(dr)
+    with open(join(dr,name+'.pickle'),'wb') as f:
+        pickle.dump(obj,f)
+
+def pickle_load(name,dr=''):
+    """Load python object with pickle."""
+    with open(join(dr,name+'.pickle'),'rb') as f:
+        return pickle.load(f)
