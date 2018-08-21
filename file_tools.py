@@ -1,6 +1,8 @@
 import numpy as np
 import os
 import h5py
+from os.path import join
+import pickle
 
 def save_data(filename, dset, dname, group='/',overwrite=False):
     """Save array and name to a group in an hdf5 file.
@@ -161,7 +163,7 @@ def load_domain(path,comm=None):
 
 def pickle_save(obj,name,dr=''):
     """Save python object with pickle."""
-    if dr: flt.makedir(dr)
+    if dr: makedir(dr)
     with open(join(dr,name+'.pickle'),'wb') as f:
         pickle.dump(obj,f)
 
