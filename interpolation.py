@@ -66,6 +66,7 @@ def get_basis_type(basis):
 def get_modes(basis,x,parity=0):
     """Get the grid values of the basis mode functions."""
     func = modes(basis_names[type(basis)],parity=parity)
+    if max(x.shape) == x.size: x = x.flatten()
     return func(x,basis.elements,*basis.interval)
 
 def get_parities(u):
