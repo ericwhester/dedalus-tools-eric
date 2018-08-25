@@ -3,20 +3,9 @@
 import math as m
 import numpy as np
 from mpi4py import MPI
-import time
-import glob, os
 
 from dedalus import public as de
-from dedalus.extras import flow_tools
-from dedalus.extras import plot_tools
-from dedalus.tools import post
-from dedalus.tools import compound_interpolation as cip
-
-import logging
-root = logging.root
-for h in root.handlers:
-    h.setLevel("INFO") 
-logger = logging.getLogger(__name__)
+import compound_interpolation as cip
 
 from numpy.polynomial import chebyshev as cb
 

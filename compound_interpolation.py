@@ -4,36 +4,17 @@ This module allows you to interpolate cylinder initial conditions defined on a c
 """
 
 import numpy as np
-import time
-import h5py
 import math as m
-from scipy.special import erf
-import glob, os
-import sys
-
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 
 import dedalus.public as de
-from dedalus.core.field import Field
-from dedalus.extras import flow_tools
-from dedalus.tools import file_tools as flt
-from dedalus.tools import field_tools as ft
-from dedalus.tools import logging
-from dedalus.tools import post
-from dedalus.tools import interpolation as ip
-
-import logging
-root = logging.root
-for h in root.handlers:
-    h.setLevel("INFO")
-logger = logging.getLogger(__name__)
+import field_tools as ft
+import interpolation as ip
 
 def sizes_to_slices(dims,arr):
     """Create list of numpy slice objects given size of subdomain slices."""
     sl = [(slice(None),)*(dims-1) + (slice(sum(arr[:index]), sum(arr[:index+1])),) for index in range(len(arr))]
-#    print(arr)
-#    print(sl)
     return sl
 
 def get_sub_domains(field):
@@ -53,7 +34,6 @@ def get_grid_slices(field):
 def get_sub_fields(field):
     """Create and initialize list of subfields for a field on a compound domain."""
     ft.reset(field)
-    print(field['g'].shape)
     sub_domains = get_sub_domains(field)
     sub_grid_slices = get_grid_slices(field)
     sub_fields = []
