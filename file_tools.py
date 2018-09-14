@@ -135,31 +135,51 @@ def move(filename,origin,destination):
         f[destination] = f[origin]
     return
 
-def save_domain(path,domain,):
-    """Save domain object information."""
-    orders = [str(i) for i in range(len(domain.bases))]
-    types = [type(basis).__name__ for basis in domain.bases]
-    names = [basis.name for basis in domain.bases]
-    sizes = [basis.base_grid_size for basis in domain.bases]
-    intervals = [basis.interval for basis in domain.bases]
-    for typ,name,order,size,interval in zip(types,names,orders,sizes,intervals):
-        order = str(order)
-        for arr, name in zip([typ,name,size,interval],['type','name','size','interval']): save_data(path,arr,name,group=order)
+# Save individual bases
+# Load domain stitches together from bases information
+def save_basis(path,basis,order):
+    """Save basis object info."""
+    typ = type(basis).__name__
+    name = basis.name
+    size = basis.base_grid_size
+    interval = basis.interval
+    for arr, name in zip([typ,name,size,interval],
+                         ['type','name','size','interval']): 
+        save_data(path,arr,name,group='{}'.format(order))
+        
+    if typ == 'Compound':
+        for suborder, subbasis in enumerate(basis.subbases):
+                save_basis(path,subbasis,order='{}/{}'.format(order,suborder))
 
-def load_domain(path,comm=None):
+def save_domain(path,domain):
+    """Save domain object bases info."""
+    for i, basis in enumerate(domain.bases):
+        save_basis(path,basis,order='{}'.format(i))
+
+def load_basis(path,order,dealias=1):
+    """Load basis from file."""
+    from dedalus import public as de
+    classes = {'Fourier':de.Fourier,'Chebyshev':de.Chebyshev,'SinCos':de.SinCos,'Compound':de.Compound}
+    typ, name, size, interval = load_data(path, 'type','name','size','interval',group=order)
+
+    if typ == 'Compound':     # Recursively load compound basis
+        suborders = sorted([key for key in get_keys(path,group=order) if key.isdigit()])
+        subbases = [load_basis(path,'{}/{}'.format(order,suborder),dealias=dealias) for suborder in suborders]
+        return classes[typ](name,subbases,dealias=dealias)
+    
+    return classes[typ](name,size,interval=interval,dealias=dealias)
+
+def load_domain(path,dealias=1,comm=None):
     """Load domain object."""
     from dedalus import public as de
     if comm:
         from mpi4py import MPI
         if comm=='world': comm = MPI.COMM_WORLD
         elif comm=='self': comm = MPI.COMM_SELF
-    classes = {'Fourier':de.Fourier,'Chebyshev':de.Chebyshev,'SinCos':de.SinCos}
-    orders, bases = sorted(get_keys(path)), {}
-    for order in orders:
-        name,typ,size,interval = load_data(path,'name','type','size','interval',group=order)
-        bases[order] = classes[typ](name,size,interval=interval)
-    domain = de.Domain([bases[order] for order in orders], grid_dtype=np.float64, comm=comm)
-    return domain
+            
+    orders = sorted(get_keys(path))
+    bases = [load_basis(path,order,dealias=dealias) for order in orders]
+    return de.Domain(bases, grid_dtype=np.float64, comm=comm)
 
 def pickle_save(obj,name,dr=''):
     """Save python object with pickle."""
