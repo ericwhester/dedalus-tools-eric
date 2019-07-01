@@ -1,6 +1,5 @@
 # coding: utf-8
 
-import math as m
 import numpy as np
 from mpi4py import MPI
 
@@ -36,7 +35,10 @@ def cos_modes(x, kx, a, b):
 
 # Getting and sorting bases and modes
 
-basis_names = {de.Fourier:'Fourier',de.SinCos:'SinCos',de.Chebyshev:'Chebyshev',de.Compound:'Compound'}
+basis_names = {de.Fourier:'Fourier',
+               de.SinCos:'SinCos',
+               de.Chebyshev:'Chebyshev',
+               de.Compound:'Compound'}
 
 def modes(basis,parity=0):
     """Return appropriate mode functions of basis."""
@@ -55,7 +57,6 @@ def get_basis_type(basis):
 def get_modes(basis,x,parity=0):
     """Get the grid values of the basis mode functions."""
     func = modes(basis_names[type(basis)],parity=parity)
-    if max(x.shape) == x.size: x = x.flatten()
     return func(x,basis.elements,*basis.interval)
 
 def get_parities(u):
@@ -88,29 +89,37 @@ def combine(A, B, last=False):
     else: return np.tensordot(A,B,axes=([-1],[0]))
 # The interpolating function
 
-def interp(u,*grids):
+def interp(u,*grids,comm=None,parallel='single'):
     """Interpolate the field at the grid points.
+    Give in x, y, z order (last basis is non-separable).
+    parallel='single' will communicate data to rank 0, 
+    perform a local transform, then communicate to other processors."""
 
-    This isn't parallelised.
-    Give in x, y, z order (last basis is non-separable)."""
     bases = u.domain.bases
+    grids = [grid.flatten() for grid in grids]
     basis_types = [get_basis_type(basis) for basis in bases]
-    if basis_types[-1]=='Compound': # Do compound interpolation
-        return cip.compound_interpolate(u,*grids)
+    if basis_types[-1]=='Compound': return cip.compound_interpolate(u,*grids)
     lasts = is_last(basis_types)
     parities = get_parities(u)
     basis_modes = [get_modes(basis,grid,parity=parity) for basis,grid,parity in zip(bases,grids,parities)]
-    u0 = u['c'].copy()
+    
+    if not comm:
+        comm = u.domain.dist.comm
+        rank, size = comm.Get_rank(), comm.Get_size()
+    
+    if size > 1: # Give global coefficients to each processor and call non-parallelised
+        lcshape = u.domain.dist.coeff_layout.local_shape(1)
+        gcshape = u.domain.dist.coeff_layout.global_shape(1)
+
+        # Allgather: load full coefficient matrix in all nodes
+        sendbuf = u['c']
+        recvbuf = np.zeros(np.prod(gcshape),dtype=u['c'].dtype).reshape(gcshape)
+        comm.Allgather(sendbuf,recvbuf)
+        u0 = recvbuf
+    else:
+        u0 = u['c'].copy()
+
     for modes, last in zip(basis_modes[::-1],lasts[::-1]):
         u0 = combine(u0,modes,last=last)
         u0 = u0.transpose(transpose_type(u0))
     return np.ascontiguousarray(u0)
-
-
-
-
-
-
-
-
-
