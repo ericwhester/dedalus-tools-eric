@@ -19,20 +19,20 @@ def cheb_mode(x, m, a, b):
     return cb.chebval(x_scaled, np.append(np.zeros(m),1))
 
 def cheb_modes(x, M, a, b):
-    return np.array([cheb_mode(x,m,a,b) for m in M])
+    return np.array([cheb_mode(x,m,a,b) for m in M],order='F')
 
 def fourier_mode(x, kx,a,b):
-    return np.exp(1j*kx*(x-a))
+    return np.exp(1j*kx*(x-a),order='F')
 
 def fourier_modes(x, kx,a,b):
-    temp = np.exp(1j*np.outer(kx,x-a))
+    temp = np.exp(1j*np.outer(kx,x-a),order='F')
     return temp
 
 def sin_modes(x, kx, a, b):
-    return np.sin(np.outer(kx,x-a))
+    return np.sin(np.outer(kx,x-a),order='F')
 
 def cos_modes(x, kx, a, b):
-    return np.cos(np.outer(kx,x-a))
+    return np.cos(np.outer(kx,x-a),order='F')
 
 # Getting and sorting bases and modes
 
