@@ -84,8 +84,8 @@ def combine(A, B, last=False):
     """Correct combination of mode grid values and coefficients."""
     if last: 
         B[0,:] = B[0,:]/2
-        return 2*np.dot(A,B).real
-    else: return np.dot(A,B)
+        return 2*np.tensordot(A,B,axes=([-1],[0])).real
+    else: return np.tensordot(A,B,axes=([-1],[0]))
 # The interpolating function
 
 def interp(u,*grids):
@@ -104,7 +104,7 @@ def interp(u,*grids):
     for modes, last in zip(basis_modes[::-1],lasts[::-1]):
         u0 = combine(u0,modes,last=last)
         u0 = u0.transpose(transpose_type(u0))
-    return u0
+    return np.ascontiguousarray(u0)
 
 
 
