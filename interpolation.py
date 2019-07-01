@@ -106,64 +106,6 @@ def interp(u,*grids):
         u0 = u0.transpose(transpose_type(u0))
     return u0
 
-def interpolate_2D(u, x, z, comm=None, basis_types=('Fourier','Chebyshev')):
-    """
-    Interpolation for a dedalus field at grid given by the points np.meshgrid(x,z).
-
-    
-    """
-    # Get mpi communications 
-    domain = u.domain
-    comm = domain.dist.comm
-    rank, size = comm.rank, comm.size
-    
-    # Get bases and shapes
-    xbasis,zbasis = domain.bases
-    lcshape = domain.dist.coeff_layout.local_shape(1)
-    gcshape = domain.dist.coeff_layout.global_shape(1)
-    
-    # Build global coefficients in local processor with MPI
-    if size > 1:
-        # prepare to send local coefficients to rank 0
-        sendbuf = u['c'].copy()
-        recvbuf = None
-        if rank == 0: recvbuf = np.empty([size, *lcshape], dtype=np.complex128)
-        comm.Gather(sendbuf, recvbuf, root=0)
-        
-        # send global coefficients to every processor from rank 0
-        if rank == 0: gcoeffs = np.reshape(recvbuf,gcshape)
-        else: gcoeffs = np.empty(gcshape, dtype=np.complex128)
-        comm.Bcast(gcoeffs, root=0)    
-    else: gcoeffs = u['c']    
-    
-    # Build correct z basis interpolation functions
-    if basis_types[1] == 'SinCos':
-        u_parity = u.meta['z']['parity']
-        if u_parity == 1:   zfunc = lambda z : trig_cos_vals(z, gcshape[1], interval=zbasis.interval)
-        elif u_parity ==-1: zfunc = lambda z : trig_sin_vals(z, gcshape[1], interval=zbasis.interval)
-    elif basis_types[1] == 'Chebyshev':
-        zfunc = lambda z : cheb_vals(z, gcshape[1], interval=zbasis.interval)
-    
-    # Get the grid values of all the modes (split for Fourier)
-    xsc = fourier_cos_vals(x.flatten(), gcshape[0], interval=xbasis.interval)
-    xss = fourier_sin_vals(x.flatten(), gcshape[0], interval=xbasis.interval)
-    zs = zfunc(z.flatten())
-
-    # Perform the transform
-    B, C = gcoeffs.real, gcoeffs.imag
-    F = np.dot(xsc,B) + np.dot(xss,C)
-    G = np.dot(F,zs)
-    return G
-
-
-
-
-
-
-
-
-
-
 
 
 
