@@ -22,26 +22,31 @@ class Mask:
         Desired shift of mask.
     domain (dedalus domain):
         Domain of mask.
+    basis_types (None, tuple of dedalus basis classes):
+        SinCos (Dirichlet, or Neumann) or Fourier (Periodic) basis for each dimension
+    parities (None, or tuple of +/- 1s):
 
     Attributes:
     field: dedalus field to be interpolated using interp method.
     """
     
-    def __init__(self,old_func,mask_profile,smooth,shift,domain,factor=1,narrow=0.):
+    def __init__(self,old_func,mask_profile,smooth,shift,domain,
+                 factor=1,narrow=0.,basis_types=None,parities=None):
         self.old = old_func
         self.mask = mask_profile
         self.smooth = smooth
         self.shift = shift
         
-        self.make_new_domain(domain,factor=factor) # Create new grid
+        self.make_new_domain(domain,factor=factor,basis_types=basis_types) # Create new grid
         self.make_old_mask_values() # Calculate old mask function on new grid
         self.make_distance_function(narrow=narrow) # Calculate distance function on new grid
         self.make_new_mask_values() # Calculate new mask function on new grid
-        self.make_new_function() # Create new mask field, to be interpolated
+        self.make_new_function(parities=parities) # Create new mask field, to be interpolated
     
-    def make_new_domain(self,domain,factor=1):
+    def make_new_domain(self,domain,factor=1,basis_types=None):
         """Create new uniformly spaced grid."""
-        self.bases = [de.SinCos(b.name,int(b.coeff_size*factor),interval=b.interval) for b in domain.bases]
+        if basis_types==None: basis_types = [de.Fourier for b in domain.bases]
+        self.bases = [Basis(b.name,int(b.coeff_size*factor),interval=b.interval) for Basis,b in zip(basis_types,domain.bases)]
         self.domain = de.Domain(self.bases,grid_dtype=np.float64,comm=comms) # local to each processor
 
     def make_old_mask_values(self,):
@@ -61,10 +66,11 @@ class Mask:
         """Calculate new mask values from distance function. Positive shift is out of object."""
         self.new_mask_vals = self.mask((self.distance+self.shift)/self.smooth)
         
-    def make_new_function(self,):
+    def make_new_function(self,parities=None):
         """Create n-dimensional linear interpolation of new mask values."""
         field = self.domain.new_field()
-        field.meta[:]['parity'] = 1
+        if parities:
+            for dim,parity in zip(field.meta,parities): field.meta[dim]['parity'] = parity
         field['g'] = self.new_mask_vals
         self.field = field
         
