@@ -103,9 +103,8 @@ def interp(u,*grids,comm=None,parallel='single'):
     parities = get_parities(u)
     basis_modes = [get_modes(basis,grid,parity=parity) for basis,grid,parity in zip(bases,grids,parities)]
     
-    if not comm:
-        comm = u.domain.dist.comm
-        rank, size = comm.Get_rank(), comm.Get_size()
+    if not comm: comm = u.domain.dist.comm
+    rank, size = comm.Get_rank(), comm.Get_size()
     
     if size > 1: # Give global coefficients to each processor and call non-parallelised
         lcshape = u.domain.dist.coeff_layout.local_shape(1)
