@@ -58,9 +58,12 @@ def load_data(filename, *dnames, group='/',show=False,flatten=True,sel=None,chec
     overwrite: boolean, optional
     show: boolean, optional
     flatten: boolean, optional
-        return number if single value
+        return 1D array if empty dimensions
+    asscalar: boolean, optional
+        return scalar if size 1 array
     sel: slice object, optional
         return slice of data array
+    checkint: return integer if integer scalar
     Returns
     -------
     List of numpy arrays
@@ -74,8 +77,8 @@ def load_data(filename, *dnames, group='/',show=False,flatten=True,sel=None,chec
             if show: print(dname)    
             if not sel: sel = Ellipsis
             arr = g[dname][sel]
-            if flatten:
-                if arr.size == 1: arr = arr.item()
+            if asscalar: arr = arr.item()
+            elif flatten:
                 elif np.prod(arr.shape) == max(arr.shape): arr = arr.flatten()                
                 elif arr.shape[0] == 1: arr = arr[0,Ellipsis]
             if checkint and isinstance(arr,float) and arr.is_integer(): arr = int(arr)
