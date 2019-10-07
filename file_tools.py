@@ -44,7 +44,7 @@ def make_group(filename,name,group='/'):
     return
 
 
-def load_data(filename, *dnames, group='/',show=False,flatten=True,sel=None,checkint=True):
+def load_data(filename, *dnames, group='/',show=False,flatten=True,sel=None,asscalar=True,checkint=True):
     """Load list of arrays given names of group in an hdf5 file.
     
     Parameters
@@ -77,11 +77,15 @@ def load_data(filename, *dnames, group='/',show=False,flatten=True,sel=None,chec
             if show: print(dname)    
             if not sel: sel = Ellipsis
             arr = g[dname][sel]
-            if asscalar: arr = arr.item()
+            if asscalar and arr.size==1: 
+                arr = arr.item()
+                if checkint and isinstance(arr,float) and arr.is_integer(): 
+                    arr = int(arr)
             elif flatten:
-                elif np.prod(arr.shape) == max(arr.shape): arr = arr.flatten()                
-                elif arr.shape[0] == 1: arr = arr[0,Ellipsis]
-            if checkint and isinstance(arr,float) and arr.is_integer(): arr = int(arr)
+                if np.prod(arr.shape) == max(arr.shape): 
+                    arr = arr.flatten()                
+                elif arr.shape[0] == 1: 
+                    arr = arr[0,Ellipsis]
             arrs.append(arr)
     return arrs
 
