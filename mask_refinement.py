@@ -31,7 +31,7 @@ class Mask:
     """
     
     def __init__(self,old_func,mask_profile,smooth,shift,domain,
-                 factor=1,narrow=0.,basis_types=None,parities=None):
+                 factor=1,narrow=0.,basis_types=None,parities=None,diffusion=0.):
         self.old = old_func
         self.mask = mask_profile
         self.smooth = smooth
@@ -42,11 +42,12 @@ class Mask:
         self.make_distance_function(narrow=narrow) # Calculate distance function on new grid
         self.make_new_mask_values() # Calculate new mask function on new grid
         self.make_new_function(parities=parities) # Create new mask field, to be interpolated
+        self.smooth_new_function(diffusion=diffusion)
     
     def make_new_domain(self,domain,factor=1,basis_types=None):
         """Create new uniformly spaced grid."""
         if basis_types==None: basis_types = [de.Fourier for b in domain.bases]
-        self.bases = [Basis(b.name,int(b.coeff_size*factor),interval=b.interval) for Basis,b in zip(basis_types,domain.bases)]
+        self.bases = [Basis(b.name,int(b.base_grid_size*factor),interval=b.interval) for Basis,b in zip(basis_types,domain.bases)]
         self.domain = de.Domain(self.bases,grid_dtype=np.float64,comm=comms) # local to each processor
 
     def make_old_mask_values(self,):
@@ -73,6 +74,10 @@ class Mask:
             for dim,parity in zip(field.meta,parities): field.meta[dim]['parity'] = parity
         field['g'] = self.new_mask_vals
         self.field = field
+
+    def smooth_new_function(self,diffusion=0):
+        wavenumbers = [self.domain.elements(i) for i in range(len(self.domain.bases))]
+        self.field['c'] *= np.exp(-diffusion*sum(k**2 for k in wavenumbers))
         
     def __call__(self,*grid,check=True):
         """Return new mask values on grid."""
