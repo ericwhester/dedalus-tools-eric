@@ -168,6 +168,7 @@ def load_basis(path,order,dealias=1):
     from dedalus import public as de
     classes = {'Fourier':de.Fourier,'Chebyshev':de.Chebyshev,'SinCos':de.SinCos,'Compound':de.Compound}
     typ, name, size, interval = load_data(path, 'type','name','size','interval',group=order)
+    typ, name = typ.decode("utf-8"), name.decode("utf-8")
 
     if typ == 'Compound':     # Recursively load compound basis
         suborders = sorted([key for key in get_keys(path,group=order) if key.isdigit()])
