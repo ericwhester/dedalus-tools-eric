@@ -44,7 +44,7 @@ def make_group(filename,name,group='/'):
     return
 
 
-def load_data(filename, *dnames, group='/',show=False,flatten=True,sel=None,asscalar=True,checkint=True):
+def load_data(filename, *dnames, group='/',show=False,flatten=True,sel=None,asscalar=True,checkint=True,unpack_singleton=False):
     """Load list of arrays given names of group in an hdf5 file.
     
     Parameters
@@ -64,6 +64,7 @@ def load_data(filename, *dnames, group='/',show=False,flatten=True,sel=None,assc
     sel: slice object, optional
         return slice of data array
     checkint: return integer if integer scalar
+    unpack_singleton: False. If true, unpack singleton tuple before retuning
     Returns
     -------
     List of numpy arrays
@@ -88,6 +89,10 @@ def load_data(filename, *dnames, group='/',show=False,flatten=True,sel=None,assc
                     arr = arr[0,Ellipsis]
             arrs.append(arr)
     return arrs
+
+def load_dims(filename, name):
+    with h5py.File(filename,'r') as f:
+        return {dim.label: dim[0][...] for dim in f['tasks'][name].dims if dim.label != ''}
 
 def makedir(path):
     """Simple wrapper to make a path if it doesn't exist
