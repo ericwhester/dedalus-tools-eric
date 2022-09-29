@@ -44,7 +44,7 @@ def make_group(filename,name,group='/'):
     return
 
 
-def load_data(filename, *dnames, group='/',show=False,flatten=True,sel=None,asscalar=True,checkint=True,unpack_singleton=False):
+def load_data(filename, *dnames, group='/',show=False,flatten=True,sel=None,asscalar=False,checkint=True,unpack_singleton=False):
     """Load list of arrays given names of group in an hdf5 file.
     
     Parameters
